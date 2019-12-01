@@ -1,0 +1,38 @@
+version: "3.5"
+
+services:
+
+  jenkins:
+    restart: unless-stopped
+    build:
+      context: configs/jenkins
+    user: root
+    ports:
+    - 8080:8080
+    - 50000:50000
+    volumes:
+    - ./jenkins_home:/var/jenkins_home
+    - ./configs/ssh:/root/.ssh
+    - /var/run/docker.sock:/var/run/docker.sock
+
+  certbot:
+    restart: unless-stopped
+    image: certbot/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - ./configs/certbot/conf:/etc/letsencrypt:rw
+    - ./configs/certbot/www:/var/www/certbot:rw
+
+  nginx:
+    restart: unless-stopped
+    image: nginx:latest
+    ports:
+    - 80:80
+    - 443:443
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    volumes:
+    - ./configs/nginx:/etc/nginx/conf.d:ro
+    - ./configs/certbot/conf:/etc/letsencrypt:rw
+    - ./configs/certbot/www:/var/www/certbot:rw
+    - ./logs/nginx:/var/log/nginx
