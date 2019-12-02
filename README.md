@@ -1,4 +1,4 @@
-# Docker composition of Jenskins
+# Docker composition of Jenkins
 
 ## How to set up
 
